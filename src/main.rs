@@ -7,9 +7,12 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, Texture, TextureCreator};
 use sdl2::video::{Window, WindowContext};
+use sdl2::image::{LoadTexture, INIT_PNG, INIT_JPG};
 
 use std::time::{Duration, SystemTime};
 use std::thread::sleep;
+use std::fs::File;
+use std::io::{self, Write, Read};
 
 const TEXTURE_SIZE: u32 = 32;
 
@@ -17,6 +20,46 @@ const TEXTURE_SIZE: u32 = 32;
 enum TextureColor {
     Green, 
     Blue,
+}
+
+fn write_into_file(content: &str, file_name: &str) -> io::Result<()> {
+    let mut f: File = File::create(file_name)?;
+    f.write_all(content.as_bytes())
+}
+
+fn read_from_file(file_name: &str) -> io::Result<String> {
+    let mut f = File::open(file_name)?;
+    let mut content = String::new();
+    f.read_to_string(&mut content)?;
+    Ok(content)
+}
+
+fn slice_to_string(slice: &[u32]) -> String {
+    slice.iter().map(|highscore| highscore.to_string()).collect::<Vec<String>>().join(" ")
+}
+
+fn save_highscores_and_lines(highscores: &[u32], number_of_lines: &[u32]) -> bool {
+    let s_highscores: String = slice_to_string(highscores);
+    let s_number_of_lines: String = slice_to_string(number_of_lines);
+    write_into_file(&format!("{}\n{}\n", s_highscores, s_number_of_lines), "scores.txt").is_ok()
+}
+
+fn line_to_slice(line: &str) -> Vec<u32> {
+    line.split(" ").filter_map(|nb| nb.parse::<u32>().ok()).collect()
+}
+
+fn load_highscores_and_lines() -> Option<(Vec<u32>, Vec<u32>)> {
+    if let Ok(content) = read_from_file("scores.txt") {
+        let mut lines = content.splitn(2, "\n").map(|line| line_to_slice(line)).collect::<Vec<_>>();
+        if lines.len() == 2 {
+            let (number_lines, highscores) = (lines.pop().unwrap(), lines.pop().unwrap());
+            Some((highscores, number_lines))
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 fn create_texture_rect<'a>(canvas: &mut Canvas<Window>,
@@ -43,7 +86,8 @@ fn create_texture_rect<'a>(canvas: &mut Canvas<Window>,
 pub fn main() {
     let sdl_context = sdl2::init().expect("SDL initialization failed");
     let video_subsystem = sdl_context.video().expect("Couldn't get SDL video subsystem");
-    let window = video_subsystem.window("rust-sdl2 demo: Video", 800, 600)
+    // let window = video_subsystem.window("rust-sdl2 demo: Video", 800, 600)
+    let window = video_subsystem.window("rust-sdl2 demo: Video", 728, 970)
         .position_centered()
         .opengl()
         .build()
@@ -55,8 +99,9 @@ pub fn main() {
         .build()
         .expect("Failed to convert window into canvas");
 
-
     let texture_creator: TextureCreator<_> = canvas.texture_creator();
+    sdl2::image::init(INIT_PNG|INIT_JPG).expect("Couldn't initialize image context");
+    let image_texture = texture_creator.load_texture("assets/my_image.jpg").expect("Couldn't load image");
 
     let green_square = create_texture_rect(&mut canvas, &texture_creator, TextureColor::Green, TEXTURE_SIZE)
         .expect("Failed to create green square texture");
@@ -78,8 +123,9 @@ pub fn main() {
                 _ => {}
             }
         }
-        canvas.set_draw_color(Color::RGB(255, 0, 0));
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
+        canvas.copy(&image_texture, None, None).expect("Render failed");
         let display_green = match timer.elapsed() {
             Ok(elapsed) => elapsed.as_secs() % 2 == 0,
             Err(_) => { true }
