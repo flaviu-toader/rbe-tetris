@@ -1,7 +1,7 @@
 [package]
 name = "tetris"
 version = "0.0.1"
-authors = ["Flaviu-Dorin TOADER <flaviu.toader@amadeus.com>"]
+authors = ["Flaviu-Dorin Toader <flaviu.toader@gmail.com>"]
 build = "build.rs"
 
 [dependencies]
