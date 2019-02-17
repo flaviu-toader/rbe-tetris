@@ -641,6 +641,48 @@ fn get_rect_from_text(text: &str, x: i32, y: i32) -> Option<Rect> {
     Some(Rect::new(x, y, text.len() as u32 * 20, 30))
 }
 
+fn display_game_information<'a>(
+    tetris: &Tetris,
+    canvas: &mut Canvas<Window>,
+    texture_creator: &'a TextureCreator<WindowContext>,
+    font: &sdl2::ttf::Font,
+    start_x_point: i32,
+) {
+    let score_text = format!("Score: {}", tetris.score);
+    let lines_sent_text = format!("Lines sent: {}", tetris.nb_lines);
+    let level_text = format!("Level: {}", tetris.current_level);
+
+    let score = create_texture_from_text(&texture_creator, &font, &score_text, 255, 255, 255)
+        .expect("Cannot render text");
+    let lines_sent =
+        create_texture_from_text(&texture_creator, &font, &lines_sent_text, 255, 255, 255)
+            .expect("Cannot render text");
+    let level = create_texture_from_text(&texture_creator, &font, &level_text, 255, 255, 255)
+        .expect("Cannot render text");
+
+    canvas
+        .copy(
+            &score,
+            None,
+            get_rect_from_text(&score_text, start_x_point, 90),
+        )
+        .expect("Couldn't copy text");
+    canvas
+        .copy(
+            &lines_sent,
+            None,
+            get_rect_from_text(&score_text, start_x_point, 125),
+        )
+        .expect("Couldn't copy text");
+    canvas
+        .copy(
+            &level,
+            None,
+            get_rect_from_text(&score_text, start_x_point, 160),
+        )
+        .expect("Couldn't copy text");
+}
+
 pub fn main() {
     let sdl_context = sdl2::init().expect("SDL initialization failed");
     let ttf_context = sdl2::ttf::init().expect("SDL TTF initialization failed");
@@ -661,7 +703,8 @@ pub fn main() {
         .event_pump()
         .expect("Failed to get SDL event pump");
 
-    let grid_x = (width - TETRIS_HEIGHT as u32 * 10) as i32 / 2;
+    //let grid_x = (width - TETRIS_HEIGHT as u32 * 10) as i32 / 2;
+    let grid_x = 20;
     let grid_y = (height - TETRIS_HEIGHT as u32 * 16) as i32 / 2;
 
     let window = video_subsystem
@@ -725,9 +768,6 @@ pub fn main() {
         texture!(45, 216, 47),
     ];
 
-    let rendered_text = create_texture_from_text(&texture_creator, &font, "test", 255, 255, 255)
-        .expect("Cannot render text");
-
     loop {
         // if match timer.elapsed() {
         //     Ok(elapsed) => elapsed.as_secs() >= 1,
@@ -753,26 +793,26 @@ pub fn main() {
                 &border,
                 None,
                 Rect::new(
-                    (width - TETRIS_HEIGHT as u32 * 10) as i32 / 2 - 10,
+                    10,
                     (height - TETRIS_HEIGHT as u32 * 16) as i32 / 2 - 10,
                     TETRIS_HEIGHT as u32 * 10 + 20,
                     TETRIS_HEIGHT as u32 * 16 + 20,
                 ),
             )
             .expect("Couldn't copy texture into window");
-        canvas
-            .copy(
-                &rendered_text,
-                None,
-                Some(Rect::new(width as i32 - 40, 0, 40, 30)),
-            )
-            .expect("Couldn't copy text");
+        display_game_information(
+            &tetris,
+            &mut canvas,
+            &texture_creator,
+            &font,
+            width as i32 - 160,
+        );
         canvas
             .copy(
                 &grid,
                 None,
                 Rect::new(
-                    (width - TETRIS_HEIGHT as u32 * 10) as i32 / 2,
+                    20,
                     (height - TETRIS_HEIGHT as u32 * 16) as i32 / 2,
                     TETRIS_HEIGHT as u32 * 10,
                     TETRIS_HEIGHT as u32 * 16,
